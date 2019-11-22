@@ -1,53 +1,40 @@
-## A lightweight and fast pure Python ECDSA
+## A lightweight and fast ECDSA implementation
 
 ### Overview
 
-We tried other Python libraries such as [python-ecdsa], [fast-ecdsa] and others less famous ones, but we didn't find anything that suit our needs. The fist one was pure Python, but it was too slow. The second one mixed Python and C and it was really fast, but we were unable to use it in our current infrastructure that required pure Python code.
+This is a Ruby fork of [ecdsa-python].
 
-[python-ecdsa]: https://github.com/warner/python-ecdsa
-[fast-ecdsa]: https://github.com/AntonKueltz/fastecdsa
-
-For this reason, we decided to create something simple, compatible with OpenSSL and fast using some elegant math as Jacobian Coordinates to speed up the ECDSA. Starkbank-EDCSA is fully compatible with Python2 and Python3.
+It is compatible with OpenSSL.
+It uses some elegant math as Jacobian Coordinates to speed up the ECDSA.
 
 ### Curves
 
-We currently support `secp256k1`, but it's super easy to add more curves to the project. Just add them on `curve.py`
+We currently support `secp256k1`, but it's super easy to add more curves to the project. Just add them on `curve.rb`
 
 ### Speed
 
-We ran a test on a MAC Pro i7 2017. We ran the library 100 times and got the average time displayed bellow:
+We ran a test on Ruby 2.6.3 on a MAC Pro i5 2019. The libraries ran 100 times and showed the average times displayed bellow:
 
 | Library            | sign          | verify  |
 | ------------------ |:-------------:| -------:|
-| [python-ecdsa]     |   121.3ms     | 65.1ms  |
-| [fast-ecdsa]       |     0.1ms     |  0.2ms  |
-| starkbank-ecdsa    |     4.1ms     |  7.8ms  |
+| [crypto]           |     0.5ms     |  1.0ms  |
+| starkbank-ecdsa    |     6.3ms     | 15.0ms  |
 
-So our pure Python code cannot compete with C based libraries, but it's `6x faster` to verify and `23x faster` to sign then other pure Python libraries.
 
 ### Sample Code
 
-How sign a json message for [Stark Bank]:
+How to sign a json message for [Stark Bank]:
 
-```python
-from json import dumps
-from ellipticcurve.ecdsa import Ecdsa
-from ellipticcurve.privateKey import PrivateKey
+```js
+var ellipticcurve = require("@starkbank/ecdsa-node")
+var Ecdsa = ellipticcurve.Ecdsa
+var PrivateKey = ellipticcurve.PrivateKey
 
-# Generate privateKey from PEM string
-privateKey = PrivateKey.fromPem("""
-    -----BEGIN EC PARAMETERS-----
-    BgUrgQQACg==
-    -----END EC PARAMETERS-----
-    -----BEGIN EC PRIVATE KEY-----
-    MHQCAQEEIODvZuS34wFbt0X53+P5EnSj6tMjfVK01dD1dgDH02RzoAcGBSuBBAAK
-    oUQDQgAE/nvHu/SQQaos9TUljQsUuKI15Zr5SabPrbwtbfT/408rkVVzq8vAisbB
-    RmpeRREXj5aog/Mq8RrdYy75W9q/Ig==
-    -----END EC PRIVATE KEY-----
-""")
+// Generate privateKey from PEM string
+var privateKey = PrivateKey.fromPem("-----BEGIN EC PARAMETERS-----\nBgUrgQQACg==\n-----END EC PARAMETERS-----\n-----BEGIN EC PRIVATE KEY-----\nMHQCAQEEIODvZuS34wFbt0X53+P5EnSj6tMjfVK01dD1dgDH02RzoAcGBSuBBAAK\noUQDQgAE/nvHu/SQQaos9TUljQsUuKI15Zr5SabPrbwtbfT/408rkVVzq8vAisbB\nRmpeRREXj5aog/Mq8RrdYy75W9q/Ig==\n-----END EC PRIVATE KEY-----\n")
 
-# Create message from json
-message = dumps({
+// Create message from json
+let message = JSON.stringify({
     "transfers": [
         {
             "amount": 100000000,
@@ -63,32 +50,33 @@ message = dumps({
 
 signature = Ecdsa.sign(message, privateKey)
 
-# Generate Signature in base64. This result can be sent to Stark Bank in header as Digital-Signature parameter
-print(signature.toBase64())
+// Generate Signature in base64. This result can be sent to Stark Bank in header as Digital-Signature parameter
+console.log(signature.toBase64())
 
-# To double check if message matches the signature
-publicKey = privateKey.publicKey()
+// To double check if message matches the signature
+let publicKey = privateKey.publicKey()
 
-print(Ecdsa.verify(message, signature, publicKey))
+console.log(Ecdsa.verify(message, signature, publicKey))
 ```
 
 Simple use:
 
-```python
-from ellipticcurve.ecdsa import Ecdsa
-from ellipticcurve.privateKey import PrivateKey
+```js
+var ellipticcurve = require("@starkbank/ecdsa-node")
+var Ecdsa = ellipticcurve.Ecdsa
+var PrivateKey = ellipticcurve.PrivateKey
 
-# Generate new Keys
-privateKey = PrivateKey()
-publicKey = privateKey.publicKey()
+// Generate new Keys
+let privateKey = new PrivateKey()
+let publicKey = privateKey.publicKey()
 
-message = "My test message"
+let message = "My test message"
 
-# Generate Signature
-signature = Ecdsa.sign(message, privateKey)
+// Generate Signature
+let signature = Ecdsa.sign(message, privateKey)
 
-# Verify if signature is valid
-print(Ecdsa.verify(message, signature, publicKey))
+// Verify if signature is valid
+console.log(Ecdsa.verify(message, signature, publicKey))
 ```
 
 ### OpenSSL
@@ -108,22 +96,21 @@ openssl dgst -sha256 -sign privateKey.pem -out signatureDer.txt message.txt
 
 It's time to verify:
 
-```python
-from ellipticcurve.ecdsa import Ecdsa
-from ellipticcurve.signature import Signature
-from ellipticcurve.publicKey import PublicKey
-from ellipticcurve.utils.file import File
+```js
+var ellipticcurve = require("@starkbank/ecdsa-node")
+var Ecdsa = ellipticcurve.Ecdsa
+var Signature = ellipticcurve.Signature
+var PublicKey = ellipticcurve.PublicKey
+var File = ellipticcurve.utils.File
 
-publicKeyPem = File.read("publicKey.pem")
-signatureDer = File.read("signatureDer.txt", "rb")
-message = File.read("message.txt")
+let publicKeyPem = File.read("publicKey.pem")
+let signatureDer = File.read("signatureDer.txt", "binary")
+let message = File.read("message.txt")
 
-publicKeyPem = File.read("publicKey.pem")
+let publicKey = PublicKey.fromPem(publicKeyPem)
+let signature = Signature.fromDer(signatureDer)
 
-publicKey = PublicKey.fromPem(publicKeyPem)
-signature = Signature.fromDer(signatureDer)
-
-print(Ecdsa.verify(message, signature, publicKey))
+console.log(Ecdsa.verify(message, signature, publicKey))
 ```
 
 You can also verify it on terminal:
@@ -140,14 +127,16 @@ openssl base64 -in signatureDer.txt -out signatureBase64.txt
 
 With this library, you can do it:
 
-```python
-from ellipticcurve.signature import Signature
-from ellipticcurve.utils.file import File
-signatureDer = File.read("signatureDer.txt", "rb")
+```js
+var ellipticcurve = require("@starkbank/ecdsa-node")
+var Signature = ellipticcurve.Signature
+var File = ellipticcurve.utils.File
 
-signature = Signature.fromDer(signatureDer)
+let signatureDer = File.read("signatureDer.txt", "binary")
 
-print(signature.toBase64())
+let signature = Signature.fromDer(signatureDer)
+
+console.log(signature.toBase64())
 ```
 
 [Stark Bank]: https://starkbank.com
@@ -155,12 +144,14 @@ print(signature.toBase64())
 ### How to install
 
 ```
-pip install starkbank-ecdsa
+npm install @starkbank/ecdsa-node
 ```
 
 ### Run all unit tests
+Run tests in [Mocha framework]
 
 ```
-python3 -m unittest discover
-python2 -m unittest discover
+node test
 ```
+
+[ecdsa-python]: https://github.com/starkbank/ecdsa-python
