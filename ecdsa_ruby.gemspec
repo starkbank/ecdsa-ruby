@@ -6,5 +6,5 @@ Gem::Specification.new do |s|
   s.authors = "starkbank"
   s.homepage = "https://github.com/starkbank/ecdsa-ruby"
   s.files = Dir['lib/**/*.rb']
-  s.licenses = "MIT License"
+  s.licenses = "MIT"
 end
