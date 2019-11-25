@@ -33,7 +33,7 @@ require "json"
 privateKey = EcdsaRuby::PrivateKey.fromPem("-----BEGIN EC PARAMETERS-----\nBgUrgQQACg==\n-----END EC PARAMETERS-----\n-----BEGIN EC PRIVATE KEY-----\nMHQCAQEEIODvZuS34wFbt0X53+P5EnSj6tMjfVK01dD1dgDH02RzoAcGBSuBBAAK\noUQDQgAE/nvHu/SQQaos9TUljQsUuKI15Zr5SabPrbwtbfT/408rkVVzq8vAisbB\nRmpeRREXj5aog/Mq8RrdYy75W9q/Ig==\n-----END EC PRIVATE KEY-----\n")
 
 # Create message from json
-message = JSON.stringify({
+message = {
     "transfers": [
         {
             "amount": 100000000,
@@ -45,7 +45,7 @@ message = JSON.stringify({
             "tags": ["daenerys", "targaryen", "transfer-1-external-id"]
         }
     ]
-}).to_json
+}.to_json
 
 signature = EcdsaRuby::Ecdsa.sign(message, privateKey)
 

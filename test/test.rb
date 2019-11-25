@@ -131,9 +131,8 @@ assertEqual(signature1.r, signature2.r)
 assertEqual(signature1.s, signature2.s)
 
 
-puts "\n\nsuccess: #{$success}"
-puts "failure: #{$failure}"
-
 if $failure == 0
-    puts "\n\nALL TEST SUCCESSFUL\n\n"
+    puts "\n\nALL #{$success} TESTS SUCCESSFUL\n\n"
+else
+    puts "\n\n#{$failure}/#{$failure + $success} FAILURES OCCURRED\n\n"
 end
