@@ -1,24 +1,24 @@
 require 'ecdsa_ruby'
 
-success = 0
-failure = 0
+$success = 0
+$failure = 0
 
 def assertEqual(a, b)
     if a != b
-        failure += 1
-        puts "\t\tfail"
+        $failure += 1
+        puts "      FAIL: #{a} != #{b}"
     else
-        success += 1
-        puts "\t\tsuccess"
+        $success += 1
+        puts "      success"
     end
 end
 
 def header(text)
-    puts "\n\n#{text} test:"
+    puts "\n  #{text} test:"
 end
 
 def subHeader(text)
-    puts "\t#{text}:"
+    puts "    #{text}:"
 end
 
 
@@ -70,22 +70,19 @@ subHeader("testPemConversion")
 privateKey1 = EcdsaRuby::PrivateKey.new()
 pem = privateKey1.toPem()
 privateKey2 = EcdsaRuby::PrivateKey.fromPem(pem)
-assertEqual(privateKey1.secret, privateKey2.secret)
-assertEqual(privateKey1.curve, privateKey2.curve)
+assertEqual(privateKey1.toPem, privateKey2.toPem)
 
 subHeader("testDerConversion")
 privateKey1 = EcdsaRuby::PrivateKey.new()
 der = privateKey1.toDer()
 privateKey2 = EcdsaRuby::PrivateKey.fromDer(der)
-assertEqual(privateKey1.secret, privateKey2.secret)
-assertEqual(privateKey1.curve, privateKey2.curve)
+assertEqual(privateKey1.toPem, privateKey2.toPem)
 
 subHeader("testStringConversion")
 privateKey1 = EcdsaRuby::PrivateKey.new()
 string = privateKey1.toString()
 privateKey2 = EcdsaRuby::PrivateKey.fromString(string)
-assertEqual(privateKey1.secret, privateKey2.secret)
-assertEqual(privateKey1.curve, privateKey2.curve)
+assertEqual(privateKey1.toPem, privateKey2.toPem)
 
 
 header("PublicKey")
@@ -95,18 +92,14 @@ privateKey = EcdsaRuby::PrivateKey.new()
 publicKey1 = privateKey.publicKey()
 pem = publicKey1.toPem()
 publicKey2 = EcdsaRuby::PublicKey.fromPem(pem)
-assertEqual(publicKey1.point.x, publicKey2.point.x)
-assertEqual(publicKey1.point.y, publicKey2.point.y)
-assertEqual(publicKey1.curve, publicKey2.curve)
+assertEqual(publicKey1.toPem, publicKey2.toPem)
 
 subHeader("testDerConversion")
 privateKey = EcdsaRuby::PrivateKey.new()
 publicKey1 = privateKey.publicKey()
 der = publicKey1.toDer()
 publicKey2 = EcdsaRuby::PublicKey.fromDer(der)
-assertEqual(publicKey1.point.x, publicKey2.point.x)
-assertEqual(publicKey1.point.y, publicKey2.point.y)
-assertEqual(publicKey1.curve, publicKey2.curve)
+assertEqual(publicKey1.toPem, publicKey2.toPem)
 
 
 subHeader("testStringConversion")
@@ -114,9 +107,7 @@ privateKey = EcdsaRuby::PrivateKey.new()
 publicKey1 = privateKey.publicKey()
 string = publicKey1.toString()
 publicKey2 = EcdsaRuby::PublicKey.fromString(string)
-assertEqual(publicKey1.point.x, publicKey2.point.x)
-assertEqual(publicKey1.point.y, publicKey2.point.y)
-assertEqual(publicKey1.curve, publicKey2.curve)
+assertEqual(publicKey1.toPem, publicKey2.toPem)
 
 
 header("Signature")
@@ -140,5 +131,9 @@ assertEqual(signature1.r, signature2.r)
 assertEqual(signature1.s, signature2.s)
 
 
-puts "\n\nsuccess: #{success}"
-puts "failure: #{failure}"
+puts "\n\nsuccess: #{$success}"
+puts "failure: #{$failure}"
+
+if $failure == 0
+    puts "\n\nALL TEST SUCCESSFUL\n\n"
+end

@@ -1,26 +1,32 @@
 class PublicKey
-    def initialize(point, curve)
-        @point = point
-        @curve = curve
+
+    def initialize(openSslPublicKey)
+        @openSslPublicKey = openSslPublicKey
     end
 
-    def toString(encoded=false)
+    attr_reader :openSslPublicKey
+
+    def toString
+        return Base64.encode64(self.toDer())
     end
 
     def toDer
-        "123"
+        @openSslPublicKey.to_der()
     end
 
     def toPem
-        self.toPem
+        @openSslPublicKey.to_pem()
     end
 
     def self.fromPem(string)
+        return PublicKey.new(OpenSSL::PKey::EC.new(string))
     end
 
     def self.fromDer(string)
+        return PublicKey.new(OpenSSL::PKey::EC.new(string))
     end
 
-    def self.fromString(string, curve="secp256k1", validatePoint=true)
+    def self.fromString(string)
+        return PublicKey.new(OpenSSL::PKey::EC.new(Base64.decode64(string)))
     end
 end

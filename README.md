@@ -5,7 +5,7 @@
 This is a Ruby fork of [ecdsa-python].
 
 It is compatible with OpenSSL.
-It preserves the [ecdsa-python] interface and wraps the builtin openSSl Ruby module.
+It preserves the [ecdsa-python] interface and wraps the built-in openSSl Ruby module.
 
 ### Speed
 
@@ -13,7 +13,12 @@ We ran a test on Ruby 2.6.3 on a MAC Pro i5 2019. The libraries ran 100 times an
 
 | Library            | sign          | verify  |
 | ------------------ |:-------------:| -------:|
-| starkbank-ecdsa    |     1.0ms     | 1.0ms  |
+| starkbank-ecdsa    |     0.5ms     | 0.4ms  |
+
+
+### Compatibility
+
+ECDSA-Ruby uses the built-in openSSL Ruby library, which has to be [linked against the system open SSL during Ruby build to work](https://docs.ruby-lang.org/en/2.3.0/OpenSSL.html), if your ruby version is 2.3 or lower. It should work right out of the box on 2.4+, though.
 
 
 ### Sample Code
@@ -21,7 +26,8 @@ We ran a test on Ruby 2.6.3 on a MAC Pro i5 2019. The libraries ran 100 times an
 How to sign a json message for [Stark Bank]:
 
 ```ruby
-require("ecdsa_ruby")
+require "ecdsa_ruby"
+require "json"
 
 # Generate privateKey from PEM string
 privateKey = EcdsaRuby::PrivateKey.fromPem("-----BEGIN EC PARAMETERS-----\nBgUrgQQACg==\n-----END EC PARAMETERS-----\n-----BEGIN EC PRIVATE KEY-----\nMHQCAQEEIODvZuS34wFbt0X53+P5EnSj6tMjfVK01dD1dgDH02RzoAcGBSuBBAAK\noUQDQgAE/nvHu/SQQaos9TUljQsUuKI15Zr5SabPrbwtbfT/408rkVVzq8vAisbB\nRmpeRREXj5aog/Mq8RrdYy75W9q/Ig==\n-----END EC PRIVATE KEY-----\n")
@@ -39,7 +45,7 @@ message = JSON.stringify({
             "tags": ["daenerys", "targaryen", "transfer-1-external-id"]
         }
     ]
-})
+}).to_json
 
 signature = EcdsaRuby::Ecdsa.sign(message, privateKey)
 
@@ -55,7 +61,7 @@ puts EcdsaRuby::Ecdsa.verify(message, signature, publicKey)
 Simple use:
 
 ```ruby
-require("ecdsa_ruby")
+require "ecdsa_ruby"
 
 # Generate new Keys
 privateKey = EcdsaRuby::PrivateKey.new()
@@ -88,7 +94,7 @@ openssl dgst -sha256 -sign privateKey.pem -out signatureDer.txt message.txt
 It's time to verify:
 
 ```ruby
-require("ecdsa_ruby")
+require "ecdsa_ruby"
 
 publicKeyPem = EcdsaRuby::Utils::File.read("publicKey.pem")
 signatureDer = EcdsaRuby::Utils::File.read("signatureDer.txt", "binary")
@@ -115,11 +121,9 @@ openssl base64 -in signatureDer.txt -out signatureBase64.txt
 With this library, you can do it:
 
 ```ruby
-ellipticcurve = require("@starkbank/ecdsa-node")
-Signature = ellipticcurve.Signature
-File = ellipticcurve.utils.File
+require "ecdsa_ruby"
 
-signatureDer = EcdsaRuby::Utils::File.read("signatureDer.txt", "binary")
+signatureDer = EcdsaRuby::Utils::File.read("test/signatureDer.txt", "binary")
 
 signature = EcdsaRuby::Signature.fromDer(signatureDer)
 
@@ -142,3 +146,4 @@ ruby test/test.rb
 ```
 
 [ecdsa-python]: https:#github.com/starkbank/ecdsa-python
+[Stark Bank]: https://starkbank.com
