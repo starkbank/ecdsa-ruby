@@ -144,14 +144,14 @@ console.log(signature.toBase64())
 ### How to install
 
 ```
-npm install @starkbank/ecdsa-node
+gem install ecdsa_ruby
 ```
 
 ### Run all unit tests
-Run tests in [Mocha framework]
+Run tests script
 
 ```
-node test
+ruby test/test.rb
 ```
 
 [ecdsa-python]: https://github.com/starkbank/ecdsa-python
