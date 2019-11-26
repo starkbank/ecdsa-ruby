@@ -7,6 +7,14 @@ This is a Ruby fork of [ecdsa-python].
 It is compatible with OpenSSL.
 It preserves the [ecdsa-python] interface and wraps the built-in openSSl Ruby module.
 
+### Instalation
+
+To install StarkBank`s ECDSA-Ruby, run:
+
+```sh
+gem install "ecdsa_ruby"
+```
+
 ### Speed
 
 We ran a test on Ruby 2.6.3 on a MAC Pro i5 2019. The libraries ran 100 times and showed the average times displayed bellow:

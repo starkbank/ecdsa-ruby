@@ -45,4 +45,5 @@ class PrivateKey
     def self.fromString(string)
         return PrivateKey.new(nil, OpenSSL::PKey::EC.new(Base64.decode64(string)))
     end
+
 end

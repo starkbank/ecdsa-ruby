@@ -11,7 +11,7 @@ module Ecdsa
         else
             message = hashfunc(message)
         end
-        
+
         signature = privateKey.openSslPrivateKey.dsa_sign_asn1(message)
         signature = Signature.new(signature)
         return signature
@@ -25,4 +25,5 @@ module Ecdsa
         end
         return publicKey.openSslPublicKey.dsa_verify_asn1(message, signature.toDer())
     end
+
 end

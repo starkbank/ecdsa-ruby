@@ -1,6 +1,7 @@
 require "base64"
 require "openSSL"
 
+
 class Signature
 
     def initialize(der)
@@ -27,4 +28,5 @@ class Signature
     def self.fromBase64(string)
         self.fromDer(Base64.decode64(string))
     end
+
 end

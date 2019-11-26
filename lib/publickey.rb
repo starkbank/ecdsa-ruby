@@ -29,4 +29,5 @@ class PublicKey
     def self.fromString(string)
         return PublicKey.new(OpenSSL::PKey::EC.new(Base64.decode64(string)))
     end
+
 end
