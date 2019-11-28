@@ -12,7 +12,7 @@ It preserves the [ecdsa-python] interface and wraps the built-in openSSl Ruby mo
 To install StarkBank`s ECDSA-Ruby, run:
 
 ```sh
-gem install "ecdsa_ruby"
+gem install "starkbank/ecdsa"
 ```
 
 ### Speed
@@ -34,11 +34,11 @@ ECDSA-Ruby uses the built-in openSSL Ruby library, which has to be [linked again
 How to sign a json message for [Stark Bank]:
 
 ```ruby
-require "ecdsa_ruby"
+require 'starkbank-ecdsa'
 require "json"
 
 # Generate privateKey from PEM string
-privateKey = EcdsaRuby::PrivateKey.fromPem("-----BEGIN EC PARAMETERS-----\nBgUrgQQACg==\n-----END EC PARAMETERS-----\n-----BEGIN EC PRIVATE KEY-----\nMHQCAQEEIODvZuS34wFbt0X53+P5EnSj6tMjfVK01dD1dgDH02RzoAcGBSuBBAAK\noUQDQgAE/nvHu/SQQaos9TUljQsUuKI15Zr5SabPrbwtbfT/408rkVVzq8vAisbB\nRmpeRREXj5aog/Mq8RrdYy75W9q/Ig==\n-----END EC PRIVATE KEY-----\n")
+privateKey = EllipticCurve::PrivateKey.fromPem("-----BEGIN EC PARAMETERS-----\nBgUrgQQACg==\n-----END EC PARAMETERS-----\n-----BEGIN EC PRIVATE KEY-----\nMHQCAQEEIODvZuS34wFbt0X53+P5EnSj6tMjfVK01dD1dgDH02RzoAcGBSuBBAAK\noUQDQgAE/nvHu/SQQaos9TUljQsUuKI15Zr5SabPrbwtbfT/408rkVVzq8vAisbB\nRmpeRREXj5aog/Mq8RrdYy75W9q/Ig==\n-----END EC PRIVATE KEY-----\n")
 
 # Create message from json
 message = {
@@ -55,7 +55,7 @@ message = {
     ]
 }.to_json
 
-signature = EcdsaRuby::Ecdsa.sign(message, privateKey)
+signature = EllipticCurve::Ecdsa.sign(message, privateKey)
 
 # Generate Signature in base64. This result can be sent to Stark Bank in header as Digital-Signature parameter
 puts signature.toBase64()
@@ -63,25 +63,25 @@ puts signature.toBase64()
 # To double check if message matches the signature
 publicKey = privateKey.publicKey()
 
-puts EcdsaRuby::Ecdsa.verify(message, signature, publicKey)
+puts EllipticCurve::Ecdsa.verify(message, signature, publicKey)
 ```
 
 Simple use:
 
 ```ruby
-require "ecdsa_ruby"
+require 'starkbank-ecdsa'
 
 # Generate new Keys
-privateKey = EcdsaRuby::PrivateKey.new()
+privateKey = EllipticCurve::PrivateKey.new()
 publicKey = privateKey.publicKey()
 
 message = "My test message"
 
 # Generate Signature
-signature = EcdsaRuby::Ecdsa.sign(message, privateKey)
+signature = EllipticCurve::Ecdsa.sign(message, privateKey)
 
 # Verify if signature is valid
-puts EcdsaRuby::Ecdsa.verify(message, signature, publicKey)
+puts EllipticCurve::Ecdsa.verify(message, signature, publicKey)
 ```
 
 ### OpenSSL
@@ -102,11 +102,11 @@ openssl dgst -sha256 -sign privateKey.pem -out signatureDer.txt message.txt
 It's time to verify:
 
 ```ruby
-require "ecdsa_ruby"
+require 'starkbank-ecdsa'
 
-publicKeyPem = EcdsaRuby::Utils::File.read("publicKey.pem")
-signatureDer = EcdsaRuby::Utils::File.read("signatureDer.txt", "binary")
-message = EcdsaRuby::Utils::File.read("message.txt")
+publicKeyPem = EllipticCurve::Utils::File.read("publicKey.pem")
+signatureDer = EllipticCurve::Utils::File.read("signatureDer.txt", "binary")
+message = EllipticCurve::Utils::File.read("message.txt")
 
 publicKey = PublicKey.fromPem(publicKeyPem)
 signature = Signature.fromDer(signatureDer)
@@ -129,11 +129,11 @@ openssl base64 -in signatureDer.txt -out signatureBase64.txt
 With this library, you can do it:
 
 ```ruby
-require "ecdsa_ruby"
+require 'starkbank-ecdsa'
 
-signatureDer = EcdsaRuby::Utils::File.read("test/signatureDer.txt", "binary")
+signatureDer = EllipticCurve::Utils::File.read("test/signatureDer.txt", "binary")
 
-signature = EcdsaRuby::Signature.fromDer(signatureDer)
+signature = EllipticCurve::Signature.fromDer(signatureDer)
 
 puts signature.toBase64()
 ```
@@ -142,8 +142,8 @@ puts signature.toBase64()
 
 ### How to install
 
-```
-gem install ecdsa_ruby
+```sh
+gem install starkbank/ecdsa
 ```
 
 ### Run all unit tests

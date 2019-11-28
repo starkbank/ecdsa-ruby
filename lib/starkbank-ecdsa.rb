@@ -5,7 +5,7 @@ require_relative "ecdsa"
 require_relative "utils/file"
 
 
-module EcdsaRuby
+module EllipticCurve
 
     Signature = Signature
     PublicKey = PublicKey

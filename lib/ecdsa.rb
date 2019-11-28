@@ -13,8 +13,7 @@ module Ecdsa
         end
 
         signature = privateKey.openSslPrivateKey.dsa_sign_asn1(message)
-        signature = Signature.new(signature)
-        return signature
+        return Signature.new(signature)
     end
 
     def self.verify(message, signature, publicKey, hashfunc=nil)

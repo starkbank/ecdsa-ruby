@@ -14,7 +14,7 @@ class PrivateKey
         end
     end
 
-    attr_accessor :openSslPrivateKey
+    attr_reader :openSslPrivateKey
 
     def publicKey
         dupKey = OpenSSL::PKey::EC.new(@openSslPrivateKey.to_der())
