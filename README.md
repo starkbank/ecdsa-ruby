@@ -1,53 +1,44 @@
-## A lightweight and fast pure Python ECDSA
+## A lightweight and fast ECDSA implementation
 
 ### Overview
 
-We tried other Python libraries such as [python-ecdsa], [fast-ecdsa] and others less famous ones, but we didn't find anything that suit our needs. The fist one was pure Python, but it was too slow. The second one mixed Python and C and it was really fast, but we were unable to use it in our current infrastructure that required pure Python code.
+This is a Ruby implementation of the Elliptic Curve Digital Signature Algorithm. It works by wrapping the built-in openSSl Ruby module.
 
-[python-ecdsa]: https://github.com/warner/python-ecdsa
-[fast-ecdsa]: https://github.com/AntonKueltz/fastecdsa
+### Installation
 
-For this reason, we decided to create something simple, compatible with OpenSSL and fast using some elegant math as Jacobian Coordinates to speed up the ECDSA. Starkbank-EDCSA is fully compatible with Python2 and Python3.
+To install StarkBank`s ECDSA-Ruby, run:
 
-### Curves
-
-We currently support `secp256k1`, but it's super easy to add more curves to the project. Just add them on `curve.py`
+```sh
+gem install "starkbank/ecdsa"
+```
 
 ### Speed
 
-We ran a test on a MAC Pro i7 2017. We ran the library 100 times and got the average time displayed bellow:
+We ran a test on Ruby 2.6.3 on a MAC Pro i5 2019. The library ran 100 times and showed the average times displayed bellow:
 
 | Library            | sign          | verify  |
 | ------------------ |:-------------:| -------:|
-| [python-ecdsa]     |   121.3ms     | 65.1ms  |
-| [fast-ecdsa]       |     0.1ms     |  0.2ms  |
-| starkbank-ecdsa    |     4.1ms     |  7.8ms  |
+| starkbank-ecdsa    |     0.5ms     | 0.4ms  |
 
-So our pure Python code cannot compete with C based libraries, but it's `6x faster` to verify and `23x faster` to sign then other pure Python libraries.
+
+### Compatibility
+
+ECDSA-Ruby uses the built-in openSSL Ruby library, which has to be [linked against the system open SSL during Ruby build to work](https://docs.ruby-lang.org/en/2.3.0/OpenSSL.html), if your ruby version is 2.3 or lower. It should work right out of the box on 2.4+, though.
+
 
 ### Sample Code
 
-How sign a json message for [Stark Bank]:
+How to sign a json message for [Stark Bank]:
 
-```python
-from json import dumps
-from ellipticcurve.ecdsa import Ecdsa
-from ellipticcurve.privateKey import PrivateKey
+```ruby
+require 'starkbank-ecdsa'
+require "json"
 
 # Generate privateKey from PEM string
-privateKey = PrivateKey.fromPem("""
-    -----BEGIN EC PARAMETERS-----
-    BgUrgQQACg==
-    -----END EC PARAMETERS-----
-    -----BEGIN EC PRIVATE KEY-----
-    MHQCAQEEIODvZuS34wFbt0X53+P5EnSj6tMjfVK01dD1dgDH02RzoAcGBSuBBAAK
-    oUQDQgAE/nvHu/SQQaos9TUljQsUuKI15Zr5SabPrbwtbfT/408rkVVzq8vAisbB
-    RmpeRREXj5aog/Mq8RrdYy75W9q/Ig==
-    -----END EC PRIVATE KEY-----
-""")
+privateKey = EllipticCurve::PrivateKey.fromPem("-----BEGIN EC PARAMETERS-----\nBgUrgQQACg==\n-----END EC PARAMETERS-----\n-----BEGIN EC PRIVATE KEY-----\nMHQCAQEEIODvZuS34wFbt0X53+P5EnSj6tMjfVK01dD1dgDH02RzoAcGBSuBBAAK\noUQDQgAE/nvHu/SQQaos9TUljQsUuKI15Zr5SabPrbwtbfT/408rkVVzq8vAisbB\nRmpeRREXj5aog/Mq8RrdYy75W9q/Ig==\n-----END EC PRIVATE KEY-----\n")
 
 # Create message from json
-message = dumps({
+message = {
     "transfers": [
         {
             "amount": 100000000,
@@ -59,36 +50,35 @@ message = dumps({
             "tags": ["daenerys", "targaryen", "transfer-1-external-id"]
         }
     ]
-})
+}.to_json
 
-signature = Ecdsa.sign(message, privateKey)
+signature = EllipticCurve::Ecdsa.sign(message, privateKey)
 
 # Generate Signature in base64. This result can be sent to Stark Bank in header as Digital-Signature parameter
-print(signature.toBase64())
+puts signature.toBase64()
 
 # To double check if message matches the signature
 publicKey = privateKey.publicKey()
 
-print(Ecdsa.verify(message, signature, publicKey))
+puts EllipticCurve::Ecdsa.verify(message, signature, publicKey)
 ```
 
 Simple use:
 
-```python
-from ellipticcurve.ecdsa import Ecdsa
-from ellipticcurve.privateKey import PrivateKey
+```ruby
+require 'starkbank-ecdsa'
 
 # Generate new Keys
-privateKey = PrivateKey()
+privateKey = EllipticCurve::PrivateKey.new()
 publicKey = privateKey.publicKey()
 
 message = "My test message"
 
 # Generate Signature
-signature = Ecdsa.sign(message, privateKey)
+signature = EllipticCurve::Ecdsa.sign(message, privateKey)
 
 # Verify if signature is valid
-print(Ecdsa.verify(message, signature, publicKey))
+puts EllipticCurve::Ecdsa.verify(message, signature, publicKey)
 ```
 
 ### OpenSSL
@@ -108,22 +98,17 @@ openssl dgst -sha256 -sign privateKey.pem -out signatureDer.txt message.txt
 
 It's time to verify:
 
-```python
-from ellipticcurve.ecdsa import Ecdsa
-from ellipticcurve.signature import Signature
-from ellipticcurve.publicKey import PublicKey
-from ellipticcurve.utils.file import File
+```ruby
+require 'starkbank-ecdsa'
 
-publicKeyPem = File.read("publicKey.pem")
-signatureDer = File.read("signatureDer.txt", "rb")
-message = File.read("message.txt")
-
-publicKeyPem = File.read("publicKey.pem")
+publicKeyPem = EllipticCurve::Utils::File.read("publicKey.pem")
+signatureDer = EllipticCurve::Utils::File.read("signatureDer.txt", "binary")
+message = EllipticCurve::Utils::File.read("message.txt")
 
 publicKey = PublicKey.fromPem(publicKeyPem)
 signature = Signature.fromDer(signatureDer)
 
-print(Ecdsa.verify(message, signature, publicKey))
+puts Ecdsa.verify(message, signature, publicKey)
 ```
 
 You can also verify it on terminal:
@@ -140,27 +125,30 @@ openssl base64 -in signatureDer.txt -out signatureBase64.txt
 
 With this library, you can do it:
 
-```python
-from ellipticcurve.signature import Signature
-from ellipticcurve.utils.file import File
-signatureDer = File.read("signatureDer.txt", "rb")
+```ruby
+require 'starkbank-ecdsa'
 
-signature = Signature.fromDer(signatureDer)
+signatureDer = EllipticCurve::Utils::File.read("test/signatureDer.txt", "binary")
 
-print(signature.toBase64())
+signature = EllipticCurve::Signature.fromDer(signatureDer)
+
+puts signature.toBase64()
 ```
 
-[Stark Bank]: https://starkbank.com
+[Stark Bank]: https:#starkbank.com
 
 ### How to install
 
-```
-pip install starkbank-ecdsa
+```sh
+gem install starkbank/ecdsa
 ```
 
 ### Run all unit tests
+Run tests script
 
 ```
-python3 -m unittest discover
-python2 -m unittest discover
+ruby test/test.rb
 ```
+
+[ecdsa-python]: https:#github.com/starkbank/ecdsa-python
+[Stark Bank]: https://starkbank.com
