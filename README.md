@@ -2,10 +2,7 @@
 
 ### Overview
 
-This is a Ruby fork of [ecdsa-python].
-
-It is compatible with OpenSSL.
-It preserves the [ecdsa-python] interface and wraps the built-in openSSl Ruby module.
+This is a Ruby implementation of the Elliptic Curve Digital Signature Algorithm. It works by wrapping the built-in openSSl Ruby module.
 
 ### Installation
 
@@ -17,7 +14,7 @@ gem install "starkbank/ecdsa"
 
 ### Speed
 
-We ran a test on Ruby 2.6.3 on a MAC Pro i5 2019. The libraries ran 100 times and showed the average times displayed bellow:
+We ran a test on Ruby 2.6.3 on a MAC Pro i5 2019. The library ran 100 times and showed the average times displayed bellow:
 
 | Library            | sign          | verify  |
 | ------------------ |:-------------:| -------:|
