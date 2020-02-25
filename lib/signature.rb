@@ -1,5 +1,5 @@
 require "base64"
-require "openSSL"
+require "opessl"
 
 
 class Signature
