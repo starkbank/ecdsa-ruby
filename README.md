@@ -9,7 +9,7 @@ This is a Ruby implementation of the Elliptic Curve Digital Signature Algorithm.
 To install StarkBank`s ECDSA-Ruby, run:
 
 ```sh
-gem install "starkbank/ecdsa"
+gem install starkbank-ecdsa
 ```
 
 ### Speed
@@ -136,12 +136,6 @@ puts signature.toBase64()
 ```
 
 [Stark Bank]: https:#starkbank.com
-
-### How to install
-
-```sh
-gem install starkbank/ecdsa
-```
 
 ### Run all unit tests
 Run tests script
