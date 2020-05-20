@@ -1,0 +1,16 @@
+language: ruby
+
+matrix:
+  include:
+    - ruby: "2.3"
+    - ruby: "2.4"
+    - ruby: "2.5"
+    - ruby: "2.6"
+    - ruby: "2.7"
+
+install:
+  - gem build starkbank-ecdsa.gemspec
+  - gem install starkbank-ecdsa-0.0.2.gem
+
+script:
+  - ruby test/test.rb
