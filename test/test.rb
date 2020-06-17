@@ -1,4 +1,4 @@
-require 'starkbank-ecdsa'
+require_relative '../lib/starkbank-ecdsa'
 
 $success = 0
 $failure = 0
