@@ -101,9 +101,9 @@ It's time to verify:
 ```ruby
 require 'starkbank-ecdsa'
 
-publicKeyPem = EllipticCurve::Utils::File.read("publicKey.pem")
-signatureDer = EllipticCurve::Utils::File.read("signatureDer.txt", "binary")
-message = EllipticCurve::Utils::File.read("message.txt")
+publicKeyPem = File.read("publicKey.pem", :encoding => "ASCII")
+signatureDer = File.read("signatureDer.txt", :encoding => "BINARY")
+message = File.read("message.txt", :encoding => "ASCII")
 
 publicKey = PublicKey.fromPem(publicKeyPem)
 signature = Signature.fromDer(signatureDer)
@@ -128,7 +128,7 @@ With this library, you can do it:
 ```ruby
 require 'starkbank-ecdsa'
 
-signatureDer = EllipticCurve::Utils::File.read("test/signatureDer.txt", "binary")
+signatureDer = File.read("test/signatureDer.txt", :encoding => "BINARY")
 
 signature = EllipticCurve::Signature.fromDer(signatureDer)
 

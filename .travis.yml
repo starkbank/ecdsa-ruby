@@ -8,9 +8,5 @@ matrix:
     - ruby: "2.6"
     - ruby: "2.7"
 
-install:
-  - gem build starkbank-ecdsa.gemspec
-  - gem install starkbank-ecdsa-0.0.3.gem
-
 script:
-  - ruby test/test.rb
+  - bundle exec rake test
