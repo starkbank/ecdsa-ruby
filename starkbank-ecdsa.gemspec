@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = %q{starkbank-ecdsa}
-  s.version = "0.0.2"
+  s.version = "0.0.3"
   s.date = %q{2019-11-21}
   s.summary = %q{fast openSSL-compatible implementation of the Elliptic Curve Digital Signature Algorithm (ECDSA)}
   s.authors = "starkbank"

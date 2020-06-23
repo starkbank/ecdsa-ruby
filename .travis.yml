@@ -10,7 +10,7 @@ matrix:
 
 install:
   - gem build starkbank-ecdsa.gemspec
-  - gem install starkbank-ecdsa-0.0.2.gem
+  - gem install starkbank-ecdsa-0.0.3.gem
 
 script:
   - ruby test/test.rb
