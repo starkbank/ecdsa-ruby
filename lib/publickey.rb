@@ -1,33 +1,37 @@
-class PublicKey
+module EllipticCurve
 
-    def initialize(openSslPublicKey)
-        @openSslPublicKey = openSslPublicKey
-    end
+    class PublicKey
 
-    attr_reader :openSslPublicKey
+        def initialize(openSslPublicKey)
+            @openSslPublicKey = openSslPublicKey
+        end
 
-    def toString
-        return Base64.encode64(self.toDer())
-    end
+        attr_reader :openSslPublicKey
 
-    def toDer
-        @openSslPublicKey.to_der()
-    end
+        def toString
+            return Base64.encode64(self.toDer())
+        end
 
-    def toPem
-        @openSslPublicKey.to_pem()
-    end
+        def toDer
+            @openSslPublicKey.to_der()
+        end
 
-    def self.fromPem(string)
-        return PublicKey.new(OpenSSL::PKey::EC.new(string))
-    end
+        def toPem
+            @openSslPublicKey.to_pem()
+        end
 
-    def self.fromDer(string)
-        return PublicKey.new(OpenSSL::PKey::EC.new(string))
-    end
+        def self.fromPem(string)
+            return PublicKey.new(OpenSSL::PKey::EC.new(string))
+        end
 
-    def self.fromString(string)
-        return PublicKey.new(OpenSSL::PKey::EC.new(Base64.decode64(string)))
+        def self.fromDer(string)
+            return PublicKey.new(OpenSSL::PKey::EC.new(string))
+        end
+
+        def self.fromString(string)
+            return PublicKey.new(OpenSSL::PKey::EC.new(Base64.decode64(string)))
+        end
+
     end
 
 end
