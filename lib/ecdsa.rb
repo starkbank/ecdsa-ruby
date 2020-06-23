@@ -1,6 +1,6 @@
 require 'digest'
 require 'openssl'
-require 'signature'
+require './lib/signature'
 
 
 module EllipticCurve
