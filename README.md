@@ -135,14 +135,19 @@ signature = EllipticCurve::Signature.fromDer(signatureDer)
 puts signature.toBase64()
 ```
 
-[Stark Bank]: https:#starkbank.com
+### Developing the gem
+
+Clone the repository and install the dependencies:
+
+```
+git clone https://github.com/starkbank/ecdsa-ruby.git
+bundle install
+```
 
 ### Run all unit tests
-Run tests script
 
 ```
-ruby test/test.rb
+rake test
 ```
 
-[ecdsa-python]: https:#github.com/starkbank/ecdsa-python
 [Stark Bank]: https://starkbank.com
