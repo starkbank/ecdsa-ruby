@@ -13,6 +13,8 @@ Given a version number MAJOR.MINOR.PATCH, increment:
 
 
 ## [Unreleased]
+
+## [2.0.0] - 2020-10-25
 ### Changed
 - internal structure to use native ruby logic instead of openssl
 ### Added
