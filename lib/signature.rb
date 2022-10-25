@@ -1,35 +1,51 @@
-require "base64"
-require "openssl"
-
-
 module EllipticCurve
-
     class Signature
-
-        def initialize(der)
-            @der = der
-            decoded = OpenSSL::ASN1.decode(der).value
-            @r = decoded[0].value
-            @s = decoded[1].value
+        attr_reader :r, :s, :recoveryId
+        
+        def initialize(r, s, recoveryId=nil)
+            @r = r
+            @s = s
+            @recoveryId = recoveryId
         end
 
-        attr_reader :r, :s
-
-        def toDer
-            return @der
+        def toDer(withRecoveryId=false)
+            hexadecimal = self._toString
+            encodedSequence = Utils::Binary.byteStringFromHex(hexadecimal)
+            if not withRecoveryId
+                return encodedSequence
+            end
+            return (27 + @recoveryId).chr + encodedSequence
         end
 
-        def toBase64
-            Base64.encode64(self.toDer()).gsub("\n", "")
+        def toBase64(withRecoveryId=false)
+            return Utils::Binary.base64FromByteString(self.toDer(withRecoveryId))
         end
 
-        def self.fromDer(string)
-            return Signature.new(string)
+        def self.fromDer(string, recoveryByte=false)
+            @recoveryId = nil
+            if recoveryByte
+                @recoveryId = string[0].ord - 27
+                string = string[1..-1]
+            end
+            hexadecimal = Utils::Binary.hexFromByteString(string)
+            return self._fromString(hexadecimal, @recoveryId)
         end
 
-        def self.fromBase64(string)
-            self.fromDer(Base64.decode64(string))
+        def self.fromBase64(string, recoveryByte=false)
+            der = Utils::Binary.byteStringFromBase64(string)
+            return self.fromDer(der, recoveryByte)
         end
 
+        def _toString
+            return Utils::Der.encodeConstructed(
+                Utils::Der.encodePrimitive(Utils::Der::DerFieldType.integer, @r),
+                Utils::Der.encodePrimitive(Utils::Der::DerFieldType.integer, @s)
+            )
+        end
+
+        def self._fromString(string, recoveryId=nil)
+            @r, @s = Utils::Der.parse(string)[0]
+            return Signature.new(@r, @s, recoveryId)
+        end
     end
 end
