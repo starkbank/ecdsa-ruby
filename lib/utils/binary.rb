@@ -24,8 +24,15 @@ module EllipticCurve
                 return [hexadecimal].pack("H*")
             end
 
-            def self.numberFromByteString(bytes)
-                return bytes.unpack("C*").reduce(0) { |number, byte| number * 256 + byte }
+            def self.numberFromByteString(bytes, bitLength=nil)
+                number = bytes.unpack("C*").reduce(0) { |n, byte| n * 256 + byte }
+                if !bitLength.nil?
+                    hashBitLen = bytes.bytesize * 8
+                    if hashBitLen > bitLength
+                        number >>= (hashBitLen - bitLength)
+                    end
+                end
+                return number
             end
 
             def self.base64FromByteString(byteString)

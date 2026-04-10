@@ -79,12 +79,12 @@ describe EllipticCurve::Curve do
         privateKeyPem = privateKey1.toPem()
         publicKeyPem = publicKey1.toPem()
 
-        expect { 
+        expect {
             privateKey2 = EllipticCurve::PrivateKey.fromPem(privateKeyPem)
         }.must_raise Exception
-        
 
-        expect { 
+
+        expect {
             publicKey2 = EllipticCurve::PublicKey.fromPem(publicKeyPem)
         }.must_raise Exception
     end

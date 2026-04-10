@@ -1,6 +1,8 @@
-describe EllipticCurve::PublicKey do
+require_relative '../test_helper'
+
+describe 'RandomTest' do
     it 'test many' do
-        for _ in 0..100
+        for _ in 0..99
             privateKey1 = EllipticCurve::PrivateKey.new()
             publicKey1 = privateKey1.publicKey()
 

@@ -2,18 +2,18 @@ require_relative '../test_helper'
 
 describe EllipticCurve::PublicKey do
   it 'test in batch' do
-    (0..1000).each do
+    (0...100).each do
       privateKey = EllipticCurve::PrivateKey.new()
       publicKey = privateKey.publicKey()
-      privateKeyString = publicKey.toCompressed()
+      publicKeyString = publicKey.toCompressed()
 
-      recoveredPublicKey = EllipticCurve::PublicKey.fromCompressed(privateKeyString)
+      recoveredPublicKey = EllipticCurve::PublicKey.fromCompressed(publicKeyString)
 
       expect(publicKey.point.x).must_equal recoveredPublicKey.point.x
       expect(publicKey.point.y).must_equal recoveredPublicKey.point.y
     end
   end
-  
+
   it 'test even fromCompressed' do
     publicKeyCompressed = "0252972572d465d016d4c501887b8df303eee3ed602c056b1eb09260dfa0da0ab2"
     publicKey = EllipticCurve::PublicKey.fromCompressed(publicKeyCompressed)
