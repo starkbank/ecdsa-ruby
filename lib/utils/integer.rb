@@ -25,7 +25,7 @@ module EllipticCurve
                 # with fresh random entropy mixed into K-init (RFC 6979 §3.6). Same message
                 # and key yield different signatures, while preserving RFC 6979's protection
                 # against RNG failures.
-                orderBitLen = curve.n.bit_length
+                orderBitLen = curve.nBitLength
                 orderByteLen = (orderBitLen + 7) / 8
 
                 secretHex = Binary.hexFromInt(secret).rjust(orderByteLen * 2, "0")

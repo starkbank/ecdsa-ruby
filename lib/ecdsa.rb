@@ -7,13 +7,13 @@ module EllipticCurve
             if hashfunc.nil? then hashfunc = lambda{ |x| Digest::SHA256.digest(x) } end
             curve = privateKey.curve
             byteMessage = hashfunc.call(message)
-            numberMessage = Utils::Binary.numberFromByteString(byteMessage, curve.n.bit_length)
+            numberMessage = Utils::Binary.numberFromByteString(byteMessage, curve.nBitLength)
 
             r, s, randSignPoint = 0, 0, nil
             kIterator = Utils::RandomInteger.rfc6979(byteMessage, privateKey.secret, curve, hashfunc)
             while r == 0 or s == 0
                 randNum = kIterator.next
-                randSignPoint = Math.multiply(curve.g, randNum, curve.n, curve.a, curve.p)
+                randSignPoint = Math.multiplyGenerator(curve, randNum)
                 r = randSignPoint.x % curve.n
                 s = ((numberMessage + r * privateKey.secret) * (Math.inv(randNum, curve.n))) % curve.n
             end
@@ -33,7 +33,7 @@ module EllipticCurve
             if hashfunc.nil? then hashfunc = lambda{ |x| Digest::SHA256.digest(x) } end
             curve = publicKey.curve
             byteMessage = hashfunc.call(message)
-            numberMessage = Utils::Binary.numberFromByteString(byteMessage, curve.n.bit_length)
+            numberMessage = Utils::Binary.numberFromByteString(byteMessage, curve.nBitLength)
 
             r = signature.r
             s = signature.s
