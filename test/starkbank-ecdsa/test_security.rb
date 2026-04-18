@@ -1,10 +1,9 @@
 require_relative '../test_helper'
 require 'digest'
 
-describe 'Rfc6979KnownAnswerTest' do
-    # Test vectors from RFC 6979 Appendix A.2.5 (prime256v1/SHA-256).
-    # The r values match the RFC exactly; s values are low-S normalized
-    # (s = N - s when RFC s > N/2).
+describe 'Prime256v1PublicKeyDerivationTest' do
+    # RFC 6979 A.2.5 public key derivation. Signatures are hedged, so r/s
+    # no longer match fixed test vectors, but pubkey derivation is unchanged.
 
     before do
         @privateKey = EllipticCurve::PrivateKey.new(
@@ -19,27 +18,21 @@ describe 'Rfc6979KnownAnswerTest' do
         expect(@publicKey.point.y).must_equal 0x7903FE1008B8BC99A41AE9E95628BC64F2F1B20C2D7E9F5177A3C294D4462299
     end
 
-    it 'testSampleMessageSignature' do
+    it 'testSampleMessageRoundTrip' do
         sig = EllipticCurve::Ecdsa.sign("sample", @privateKey)
-        # r matches RFC 6979 A.2.5 exactly
-        expect(sig.r).must_equal 0xEFD48B2AACB6A8FD1140DD9CD45E81D69D2C877B56AAF991C34D0EA84EAF3716
-        # s is low-S normalized: N - 0xF7CB1C942D657C41D436C7A1B6E29F65F3E900DBB9AFF4064DC4AB2F843ACDA8
-        expect(sig.s).must_equal 0x834E36AD29A83BF2BC9385E491D6099C8FDF9D1ED67AA7EA5F51F93782857A9
+        expect(sig.s <= EllipticCurve::Curve::PRIME256V1.n / 2).must_equal true
         expect(EllipticCurve::Ecdsa.verify("sample", sig, @publicKey)).must_equal true
     end
 
-    it 'testTestMessageSignature' do
+    it 'testTestMessageRoundTrip' do
         sig = EllipticCurve::Ecdsa.sign("test", @privateKey)
-        # r matches RFC 6979 A.2.5 exactly
-        expect(sig.r).must_equal 0xF1ABB023518351CD71D881567B1EA663ED3EFCF6C5132B354F28D3B0B7D38367
-        # s already low-S, matches RFC directly
-        expect(sig.s).must_equal 0x019F4113742A2B14BD25926B49C649155F267E60D3814B4C0CC84250E46F0083
+        expect(sig.s <= EllipticCurve::Curve::PRIME256V1.n / 2).must_equal true
         expect(EllipticCurve::Ecdsa.verify("test", sig, @publicKey)).must_equal true
     end
 end
 
-describe 'Secp256k1KnownAnswerTest' do
-    # Known-answer tests for secp256k1 with secret=1 (pubkey = generator G).
+describe 'Secp256k1PublicKeyDerivationTest' do
+    # secp256k1 with secret=1 (pubkey = generator G).
 
     before do
         @privateKey = EllipticCurve::PrivateKey.new(EllipticCurve::Curve::SECP256K1, 1)
@@ -51,17 +44,13 @@ describe 'Secp256k1KnownAnswerTest' do
         expect(@publicKey.point.y).must_equal EllipticCurve::Curve::SECP256K1.g.y
     end
 
-    it 'testSampleMessageSignature' do
+    it 'testSampleMessageRoundTrip' do
         sig = EllipticCurve::Ecdsa.sign("sample", @privateKey)
-        expect(sig.r).must_equal 0x58DB657BCD631038BEA07B4941172F0167ACA98F12B55E3176BD1C35435D6501
-        expect(sig.s).must_equal 0x3A78E73D8FF8AB554E13C10F6390D81A882F91945D6275493882676170B53A57
         expect(EllipticCurve::Ecdsa.verify("sample", sig, @publicKey)).must_equal true
     end
 
-    it 'testTestMessageSignature' do
+    it 'testTestMessageRoundTrip' do
         sig = EllipticCurve::Ecdsa.sign("test", @privateKey)
-        expect(sig.r).must_equal 0x98DF3AAED18D1299109E9732E3015F7E68E5D1FDEAD6924809B410D970A3B0CE
-        expect(sig.s).must_equal 0x3EF15987C6592379BAAD6392586A382D63952572632FCD951AE75E7471C144C6
         expect(EllipticCurve::Ecdsa.verify("test", sig, @publicKey)).must_equal true
     end
 end
@@ -170,16 +159,15 @@ describe 'ForgeryAttemptTest' do
     end
 end
 
-describe 'Rfc6979Test' do
-    it 'testDeterministicSignature' do
+describe 'HedgedSignatureTest' do
+    it 'testSameInputsProduceDifferentSignatures' do
         privateKey = EllipticCurve::PrivateKey.new()
         message = "test message"
 
         signature1 = EllipticCurve::Ecdsa.sign(message, privateKey)
         signature2 = EllipticCurve::Ecdsa.sign(message, privateKey)
 
-        expect(signature1.r).must_equal signature2.r
-        expect(signature1.s).must_equal signature2.s
+        expect(signature1.r != signature2.r || signature1.s != signature2.s).must_equal true
     end
 
     it 'testDifferentMessagesDifferentSignatures' do
@@ -375,7 +363,7 @@ describe 'HashTruncationTest' do
         expect(EllipticCurve::Ecdsa.verify("wrong message", signature, publicKey, hashfunc)).must_equal false
     end
 
-    it 'testSha512DeterministicSignature' do
+    it 'testSha512SignaturesAreHedged' do
         privateKey = EllipticCurve::PrivateKey.new()
         message = "test message"
         hashfunc = lambda { |x| Digest::SHA512.digest(x) }
@@ -383,8 +371,7 @@ describe 'HashTruncationTest' do
         signature1 = EllipticCurve::Ecdsa.sign(message, privateKey, hashfunc)
         signature2 = EllipticCurve::Ecdsa.sign(message, privateKey, hashfunc)
 
-        expect(signature1.r).must_equal signature2.r
-        expect(signature1.s).must_equal signature2.s
+        expect(signature1.r != signature2.r || signature1.s != signature2.s).must_equal true
     end
 
     it 'testHashMismatchFails' do
@@ -411,15 +398,14 @@ describe 'Prime256v1SecurityTest' do
         expect(EllipticCurve::Ecdsa.verify(message, signature, publicKey)).must_equal true
     end
 
-    it 'testDeterministicSignature' do
+    it 'testSignaturesAreHedged' do
         privateKey = EllipticCurve::PrivateKey.new(EllipticCurve::Curve::PRIME256V1)
         message = "test message"
 
         signature1 = EllipticCurve::Ecdsa.sign(message, privateKey)
         signature2 = EllipticCurve::Ecdsa.sign(message, privateKey)
 
-        expect(signature1.r).must_equal signature2.r
-        expect(signature1.s).must_equal signature2.s
+        expect(signature1.r != signature2.r || signature1.s != signature2.s).must_equal true
     end
 
     it 'testWrongCurveKeyFails' do

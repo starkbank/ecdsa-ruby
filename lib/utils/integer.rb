@@ -21,7 +21,10 @@ module EllipticCurve
             end
 
             def self.rfc6979(hashBytes, secret, curve, hashfunc)
-                # Generate deterministic nonce values per RFC 6979
+                # Generate nonce values per hedged RFC 6979: deterministic k derivation
+                # with fresh random entropy mixed into K-init (RFC 6979 §3.6). Same message
+                # and key yield different signatures, while preserving RFC 6979's protection
+                # against RNG failures.
                 orderBitLen = curve.n.bit_length
                 orderByteLen = (orderBitLen + 7) / 8
 
@@ -32,14 +35,17 @@ module EllipticCurve
                 hashHex = Binary.hexFromInt(hashReduced).rjust(orderByteLen * 2, "0")
                 hashOctets = Binary.byteStringFromHex(hashHex)
 
+                extraEntropyHex = Binary.hexFromInt(between(0, (1 << (orderByteLen * 8)) - 1)).rjust(orderByteLen * 2, "0")
+                extraEntropy = Binary.byteStringFromHex(extraEntropyHex)
+
                 hLen = hashfunc.call("").bytesize
                 digestName = _digestNameFromLength(hLen)
                 v = "\x01".b * hLen
                 k = "\x00".b * hLen
 
-                k = OpenSSL::HMAC.digest(digestName, k, v + "\x00".b + secretBytes + hashOctets)
+                k = OpenSSL::HMAC.digest(digestName, k, v + "\x00".b + secretBytes + hashOctets + extraEntropy)
                 v = OpenSSL::HMAC.digest(digestName, k, v)
-                k = OpenSSL::HMAC.digest(digestName, k, v + "\x01".b + secretBytes + hashOctets)
+                k = OpenSSL::HMAC.digest(digestName, k, v + "\x01".b + secretBytes + hashOctets + extraEntropy)
                 v = OpenSSL::HMAC.digest(digestName, k, v)
 
                 Enumerator.new do |yielder|
