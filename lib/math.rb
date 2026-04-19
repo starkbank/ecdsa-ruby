@@ -243,12 +243,19 @@ module EllipticCurve
             px, py, pz = p.x, p.y, p.z
             qx, qy, qz = q.x, q.y, q.z
 
-            qz2 = (qz * qz) % prime
             pz2 = (pz * pz) % prime
-            u1 = (px * qz2) % prime
             u2 = (qx * pz2) % prime
-            s1 = (py * qz2 * qz) % prime
             s2 = (qy * pz2 * pz) % prime
+
+            if qz == 1
+                # Mixed affine+Jacobian add: qz^2=qz^3=1 saves four multiplications.
+                u1 = px
+                s1 = py
+            else
+                qz2 = (qz * qz) % prime
+                u1 = (px * qz2) % prime
+                s1 = (py * qz2 * qz) % prime
+            end
 
             if u1 == u2
                 if s1 != s2
@@ -264,7 +271,7 @@ module EllipticCurve
             u1h2 = (u1 * h2) % prime
             nx = (r * r - h3 - 2 * u1h2) % prime
             ny = (r * (u1h2 - nx) - s1 * h3) % prime
-            nz = (h * pz * qz) % prime
+            nz = qz == 1 ? (h * pz) % prime : (h * pz * qz) % prime
 
             return Point.new(nx, ny, nz)
         end
