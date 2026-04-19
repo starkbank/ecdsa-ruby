@@ -51,7 +51,7 @@ module EllipticCurve
             v = Math.multiplyAndAdd(
                 curve.g, (numberMessage * inv) % curve.n,
                 publicKey.point, (r * inv) % curve.n,
-                curve.n, curve.a, curve.p,
+                curve.n, curve.a, curve.p, curve,
             )
             if v.isAtInfinity
                 return false

@@ -142,18 +142,28 @@ module EllipticCurve
             )
         end
 
-        def self.multiplyAndAdd(p1, n1, p2, n2, order, coeff, prime)
-            # Compute n1*p1 + n2*p2 using Shamir's trick (simultaneous double-and-add).
+        def self.multiplyAndAdd(p1, n1, p2, n2, order, coeff, prime, curve=nil)
+            # Compute n1*p1 + n2*p2. If `curve` is given and exposes `glvParams`
+            # (e.g. secp256k1), uses the GLV endomorphism to split both scalars
+            # into ~128-bit halves and run a 4-scalar simultaneous multi-
+            # exponentiation. Otherwise falls back to Shamir's trick with JSF.
             # Not constant-time - use only with public scalars (e.g. verification).
             #
             # :param p1: First point
             # :param n1: First scalar
             # :param p2: Second point
             # :param n2: Second scalar
-            # :param order: Order of the elliptic curve
-            # :param coeff: Coefficient of the first-order term of the equation Y^2 = X^3 + A*X + B (mod p)
-            # :param prime: Prime number in the module of the equation Y^2 = X^3 + A*X + B (mod p)
+            # :param order: Order of the elliptic curve (ignored when `curve` is given)
+            # :param coeff: Coefficient of the first-order term of the equation Y^2 = X^3 + A*X + B (mod p) (ignored when `curve` is given)
+            # :param prime: Prime number in the module of the equation Y^2 = X^3 + A*X + B (mod p) (ignored when `curve` is given)
+            # :param curve: Optional curve object; enables GLV if `curve.glvParams` is set
             # :return: Point n1*p1 + n2*p2
+            if not curve.nil?
+                order, coeff, prime = curve.n, curve.a, curve.p
+                if not curve.glvParams.nil?
+                    return self._glvMultiplyAndAdd(p1, n1, p2, n2, curve)
+                end
+            end
             return self._fromJacobian(
                 self._shamirMultiply(
                     self._toJacobian(p1), n1,
@@ -161,6 +171,70 @@ module EllipticCurve
                     order, coeff, prime,
                 ), prime,
             )
+        end
+
+        def self._glvMultiplyAndAdd(p1, n1, p2, n2, curve)
+            # Compute n1*p1 + n2*p2 using the GLV endomorphism. Splits each 256-bit
+            # scalar into two ~128-bit scalars via k == k1 + k2*lambda (mod N), then
+            # runs a 4-scalar simultaneous double-and-add over (p1, phi(p1), p2,
+            # phi(p2)) with a 16-entry precomputed table of subset sums. Halves the
+            # loop length versus the plain Shamir path.
+            glv = curve.glvParams
+            order, coeff, prime = curve.n, curve.a, curve.p
+            beta = glv[:beta]
+
+            k1, k2 = self._glvDecompose(n1 % order, glv, order)
+            k3, k4 = self._glvDecompose(n2 % order, glv, order)
+
+            # Base points (affine, z=1) - phi((x,y)) = (beta*x mod P, y).
+            bases = [
+                Point.new(p1.x, p1.y, 1),
+                Point.new((beta * p1.x) % prime, p1.y, 1),
+                Point.new(p2.x, p2.y, 1),
+                Point.new((beta * p2.x) % prime, p2.y, 1),
+            ]
+            scalars = [k1, k2, k3, k4]
+            (0...4).each do |i|
+                if scalars[i] < 0
+                    scalars[i] = -scalars[i]
+                    bases[i] = Point.new(bases[i].x, prime - bases[i].y, 1)
+                end
+            end
+
+            # Precompute table[idx] = sum of bases[i] selected by bits of idx.
+            table = Array.new(16, Point.new(0, 0, 1))
+            (1...16).each do |idx|
+                low = idx & -idx
+                i = low.bit_length - 1
+                table[idx] = self._jacobianAdd(table[idx ^ low], bases[i], coeff, prime)
+            end
+
+            maxLen = scalars.map(&:bit_length).max
+            r = Point.new(0, 0, 1)
+            s0, s1, s2, s3 = scalars
+            (maxLen - 1).downto(0) do |bit|
+                r = self._jacobianDouble(r, coeff, prime)
+                idx = ((s0 >> bit) & 1) | (((s1 >> bit) & 1) << 1) \
+                    | (((s2 >> bit) & 1) << 2) | (((s3 >> bit) & 1) << 3)
+                if idx != 0
+                    r = self._jacobianAdd(r, table[idx], coeff, prime)
+                end
+            end
+
+            return self._fromJacobian(r, prime)
+        end
+
+        def self._glvDecompose(k, glv, order)
+            # Decompose k into (k1, k2) with k == k1 + k2*lambda (mod N) and
+            # |k1|, |k2| ~ sqrt(N). Babai rounding against the precomputed basis
+            # {(a1, b1), (a2, b2)}; k1 and k2 may be negative.
+            a1, b1, a2, b2 = glv[:a1], glv[:b1], glv[:a2], glv[:b2]
+            halfN = order / 2
+            c1 = (b2 * k + halfN) / order
+            c2 = (-b1 * k + halfN) / order
+            k1 = k - c1 * a1 - c2 * a2
+            k2 = -c1 * b1 - c2 * b2
+            return k1, k2
         end
 
         def self.inv(x, n)
