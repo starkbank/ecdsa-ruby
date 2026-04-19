@@ -332,8 +332,10 @@ module EllipticCurve
         end
 
         def self._shamirMultiply(jp1, n1, jp2, n2, order, coeff, prime)
-            # Compute n1*p1 + n2*p2 using Shamir's trick (simultaneous double-and-add).
-            # Not constant-time - use only with public scalars (e.g. verification).
+            # Compute n1*p1 + n2*p2 using Shamir's trick with Joint Sparse Form
+            # (Solinas 2001). JSF picks signed digits in {-1, 0, 1} so at most ~l/2
+            # digit pairs are non-zero, versus ~3l/4 for the raw binary form. Not
+            # constant-time - use only with public scalars (e.g. verification).
             #
             # :param jp1: First point in Jacobian coordinates
             # :param n1: First scalar
@@ -350,23 +352,74 @@ module EllipticCurve
                 n2 = n2 % order
             end
 
+            if n1 == 0 and n2 == 0
+                return Point.new(0, 0, 1)
+            end
+
+            neg = lambda { |pt| Point.new(pt.x, pt.y == 0 ? 0 : prime - pt.y, pt.z) }
+
             jp1p2 = self._jacobianAdd(jp1, jp2, coeff, prime)
+            jp1mp2 = self._jacobianAdd(jp1, neg.call(jp2), coeff, prime)
+            addTable = {
+                [1, 0]   => jp1,
+                [-1, 0]  => neg.call(jp1),
+                [0, 1]   => jp2,
+                [0, -1]  => neg.call(jp2),
+                [1, 1]   => jp1p2,
+                [-1, -1] => neg.call(jp1p2),
+                [1, -1]  => jp1mp2,
+                [-1, 1]  => neg.call(jp1mp2),
+            }
 
-            l = [n1.bit_length, n2.bit_length].max
+            digits = self._jsfDigits(n1, n2)
             r = Point.new(0, 0, 1)
-
-            (l - 1).downto(0) do |i|
+            digits.each do |u0, u1|
                 r = self._jacobianDouble(r, coeff, prime)
-                b1 = (n1 >> i) & 1
-                b2 = (n2 >> i) & 1
-                if b1 != 0
-                    r = self._jacobianAdd(r, b2 != 0 ? jp1p2 : jp1, coeff, prime)
-                elsif b2 != 0
-                    r = self._jacobianAdd(r, jp2, coeff, prime)
+                if u0 != 0 or u1 != 0
+                    r = self._jacobianAdd(r, addTable[[u0, u1]], coeff, prime)
                 end
             end
 
             return r
+        end
+
+        def self._jsfDigits(k0, k1)
+            # Joint Sparse Form of (k0, k1): list of signed-digit pairs (u0, u1) in
+            # {-1, 0, 1}, ordered MSB-first. At most one of any two consecutive pairs
+            # is non-zero, giving density ~1/2 instead of ~3/4 from raw binary.
+            digits = []
+            d0 = 0
+            d1 = 0
+            while k0 + d0 != 0 or k1 + d1 != 0
+                a0 = k0 + d0
+                a1 = k1 + d1
+                if (a0 & 1) != 0
+                    u0 = (a0 & 3) == 1 ? 1 : -1
+                    if [3, 5].include?(a0 & 7) and (a1 & 3) == 2
+                        u0 = -u0
+                    end
+                else
+                    u0 = 0
+                end
+                if (a1 & 1) != 0
+                    u1 = (a1 & 3) == 1 ? 1 : -1
+                    if [3, 5].include?(a1 & 7) and (a0 & 3) == 2
+                        u1 = -u1
+                    end
+                else
+                    u1 = 0
+                end
+                digits << [u0, u1]
+                if 2 * d0 == 1 + u0
+                    d0 = 1 - d0
+                end
+                if 2 * d1 == 1 + u1
+                    d1 = 1 - d1
+                end
+                k0 >>= 1
+                k1 >>= 1
+            end
+            digits.reverse
         end
     end
 end
