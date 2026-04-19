@@ -1,6 +1,4 @@
 module EllipticCurve
-    GENERATOR_WINDOW_BITS = 4
-
     class Math
         def self.modularSquareRoot(value, prime)
             # Tonelli-Shanks algorithm for modular square root. Works for all odd primes.
@@ -56,8 +54,11 @@ module EllipticCurve
         end
 
         def self.multiplyGenerator(curve, n)
-            # Fast scalar multiplication n*G using a precomputed window table (2^4-ary).
-            # Roughly 2-3x faster than variable-base multiplication.
+            # Fast scalar multiplication n*G using a precomputed affine table of
+            # powers-of-two multiples of G and the width-2 NAF of n. Every non-zero
+            # NAF digit triggers one mixed add and zero doublings, trading the ~256
+            # doublings of a windowed method for ~86 adds on average - a large net
+            # reduction in field multiplications for 256-bit scalars.
             if n < 0 or n >= curve.n
                 n = n % curve.n
             end
@@ -65,37 +66,52 @@ module EllipticCurve
                 return Point.new(0, 0, 0)
             end
 
-            table = self._generatorTable(curve)
-            w = GENERATOR_WINDOW_BITS
-            mask = (1 << w) - 1
+            table = self._generatorPowersTable(curve)
             coeff = curve.a
             prime = curve.p
 
             r = Point.new(0, 0, 1)
-            startBit = ((curve.nBitLength - 1) / w) * w
-            bit = startBit
-            while bit >= 0
-                w.times { r = self._jacobianDouble(r, coeff, prime) }
-                window = (n >> bit) & mask
-                if window != 0
-                    r = self._jacobianAdd(r, table[window], coeff, prime)
+            i = 0
+            k = n
+            while k > 0
+                if (k & 1) != 0
+                    digit = 2 - (k & 3)  # -1 or +1
+                    k -= digit
+                    g = table[i]
+                    if digit == 1
+                        r = self._jacobianAdd(r, g, coeff, prime)
+                    else
+                        r = self._jacobianAdd(r, Point.new(g.x, prime - g.y, 1), coeff, prime)
+                    end
                 end
-                bit -= w
+                k >>= 1
+                i += 1
             end
             return self._fromJacobian(r, prime)
         end
 
-        def self._generatorTable(curve)
-            return curve._generatorTable unless curve._generatorTable.nil?
-            w = GENERATOR_WINDOW_BITS
+        def self._generatorPowersTable(curve)
+            # Build [G, 2G, 4G, ..., 2^nBitLength * G] in affine (z=1) form, so each
+            # add in multiplyGenerator hits the mixed-add fast path.
+            return curve._generatorPowersTable unless curve._generatorPowersTable.nil?
             coeff = curve.a
             prime = curve.p
-            gJac = Point.new(curve.g.x, curve.g.y, 1)
-            table = [Point.new(0, 0, 1), gJac]
-            (((1 << w) - 2)).times do
-                table << self._jacobianAdd(table.last, gJac, coeff, prime)
+            current = Point.new(curve.g.x, curve.g.y, 1)
+            table = [current]
+            # NAF of an nBitLength-bit scalar can be up to nBitLength+1 digits.
+            curve.nBitLength.times do
+                doubled = self._jacobianDouble(current, coeff, prime)
+                if doubled.y == 0
+                    current = doubled
+                else
+                    zInv = self.inv(doubled.z, prime)
+                    zInv2 = (zInv * zInv) % prime
+                    zInv3 = (zInv2 * zInv) % prime
+                    current = Point.new((doubled.x * zInv2) % prime, (doubled.y * zInv3) % prime, 1)
+                end
+                table << current
             end
-            curve._generatorTable = table
+            curve._generatorPowersTable = table
             return table
         end
 

@@ -7,7 +7,7 @@ module EllipticCurve
     module Curve
         class CurveFp
             attr_accessor :a, :b, :p, :n, :g, :name, :oid, :nistName, :nBitLength
-            attr_accessor :_generatorTable
+            attr_accessor :_generatorPowersTable
 
             def initialize(a, b, p, n, gx, gy, name, oid, nistName=nil)
                 @a = a
@@ -19,7 +19,7 @@ module EllipticCurve
                 @name = name
                 @oid = oid
                 @nistName = nistName
-                @_generatorTable = nil
+                @_generatorPowersTable = nil
             end
             
             def contains(p)
