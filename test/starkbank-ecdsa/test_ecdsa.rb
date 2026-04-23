@@ -8,7 +8,7 @@ describe EllipticCurve::Ecdsa do
     signature = EllipticCurve::Ecdsa.sign(message, privateKey)
     expect(EllipticCurve::Ecdsa.verify(message, signature, publicKey)).must_equal true
   end
-  
+
   it 'will not verify the wrong message' do
     privateKey = EllipticCurve::PrivateKey.new()
     publicKey = privateKey.publicKey()
@@ -17,7 +17,7 @@ describe EllipticCurve::Ecdsa do
     signature = EllipticCurve::Ecdsa.sign(message1, privateKey)
     expect(EllipticCurve::Ecdsa.verify(message2, signature, publicKey)).must_equal false
   end
-  
+
   it 'testZeroSignature' do
     privateKey = EllipticCurve::PrivateKey.new()
     publicKey = privateKey.publicKey()

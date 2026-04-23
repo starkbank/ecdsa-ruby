@@ -1,8 +1,19 @@
-## A lightweight and fast ECDSA implementation
+## A lightweight and fast pure Ruby ECDSA
 
 ### Overview
 
 This is a Ruby implementation of the Elliptic Curve Digital Signature Algorithm. It is compatible with OpenSSL and uses elegant math such as Jacobian Coordinates to speed up the ECDSA on pure Ruby.
+
+### Security
+
+starkbank-ecdsa includes the following security features:
+
+- **RFC 6979 deterministic nonces**: Eliminates the catastrophic risk of nonce reuse that leaks private keys
+- **Low-S signature normalization**: Prevents signature malleability (BIP-62)
+- **Public key on-curve validation**: Blocks invalid-curve attacks during verification
+- **Montgomery ladder scalar multiplication**: Constant-operation point multiplication to mitigate timing side channels
+- **Hash truncation**: Correctly handles hash functions larger than the curve order (e.g. SHA-512 with secp256k1)
+- **Fermat's little theorem for modular inverse**: More uniform execution time than the extended Euclidean algorithm
 
 ### Installation
 
@@ -14,15 +25,17 @@ gem install starkbank-ecdsa
 
 ### Curves
 
-We currently support `secp256k1`, but you can add more curves to your project. You just need to use the `EllipticCurve::Curve.add()` method.
+We currently support `secp256k1` and `prime256v1` (P-256), but you can add more curves to the project. You just need to use the `EllipticCurve::Curve.add()` method.
 
 ### Speed
 
-We ran a test on Ruby 2.6.8 on a MAC Air M1 2020. The library ran 100 times and showed the average times displayed bellow:
+We ran a test on Ruby 2.6.10 on a MAC Pro. The library was run 100 times and the averages displayed below were obtained:
 
 | Library            | sign          | verify  |
 | ------------------ |:-------------:| -------:|
-| starkbank-ecdsa    |     3.4ms     | 6.6ms  |
+| starkbank-ecdsa    |     1.5ms     |  3.6ms  |
+
+Performance is driven by Jacobian coordinates, a branch-balanced Montgomery ladder for variable-base scalar multiplication, a precomputed affine table of powers-of-two multiples of the generator (`[G, 2G, 4G, ..., 2^n*G]`) combined with a width-2 NAF of the scalar to eliminate doublings during signing, a mixed affine+Jacobian addition fast path, curve-specific shortcuts in point doubling (A=0 for secp256k1, A=-3 for prime256v1), the secp256k1 GLV endomorphism to split 256-bit scalars into two ~128-bit halves for a 4-scalar simultaneous multi-exponentiation during verification, Shamir's trick with Joint Sparse Form as the fallback path for curves without an efficient endomorphism, and the extended Euclidean algorithm for modular inversion.
 
 ### Sample Code
 
@@ -151,10 +164,10 @@ publicKeyPem = EllipticCurve::Utils::File.read("publicKey.pem")
 signatureDer = EllipticCurve::Utils::File.read("signatureDer.txt", "binary")
 message = EllipticCurve::Utils::File.read("message.txt")
 
-publicKey = PublicKey.fromPem(publicKeyPem)
-signature = Signature.fromDer(signatureDer)
+publicKey = EllipticCurve::PublicKey.fromPem(publicKeyPem)
+signature = EllipticCurve::Signature.fromDer(signatureDer)
 
-puts Ecdsa.verify(message, signature, publicKey)
+puts EllipticCurve::Ecdsa.verify(message, signature, publicKey)
 ```
 
 You can also verify it on terminal:
@@ -194,6 +207,12 @@ bundle install
 
 ```
 rake test
+```
+
+### Run benchmark
+
+```
+ruby benchmark.rb
 ```
 
 [Stark Bank]: https://starkbank.com

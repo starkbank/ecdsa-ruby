@@ -21,4 +21,12 @@ describe EllipticCurve::Signature do
     expect(signature1.r).must_equal signature2.r
     expect(signature1.s).must_equal signature2.s
   end
+
+  it 'testUniqueness' do
+    privateKey = EllipticCurve::PrivateKey.new()
+    message = "This is a text message"
+    signature1 = EllipticCurve::Ecdsa.sign(message, privateKey)
+    signature2 = EllipticCurve::Ecdsa.sign(message, privateKey)
+    expect(signature1.toBase64).wont_equal signature2.toBase64
+  end
 end

@@ -140,7 +140,7 @@ module EllipticCurve
                     raise Exception.new("indefinite length encoding located in DER")
                 end
                 lengthBytes += 2 * lengthLength
-                length = Utils::Binary.intFromHex(hexadecimal[2, lengthBytes]) * 2
+                length = Utils::Binary.intFromHex(hexadecimal[2...lengthBytes]) * 2
                 return length, lengthBytes
             end
 
